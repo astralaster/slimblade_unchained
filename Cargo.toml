@@ -1,0 +1,83 @@
+[workspace]
+members = [
+    "crates/slimblade-bk3635",
+    "crates/slimblade-cli",
+    "crates/slimblade-image",
+    "crates/slimblade-linux",
+    "crates/slimblade-protocol",
+    "crates/slimblade-usb",
+    "crates/slimblade-verify",
+    "crates/rate-flash",
+    "xtask",
+]
+exclude = [
+    "firmware/bk3635-rs",
+    "firmware/bk3635-stock-harness",
+    "firmware/bk3635-usb-probe",
+]
+resolver = "3"
+
+[workspace.package]
+edition = "2024"
+license = "Apache-2.0"
+rust-version = "1.97.1"
+
+[workspace.lints.rust]
+rust_2018_idioms = { level = "warn", priority = -1 }
+unsafe_op_in_unsafe_fn = "deny"
+warnings = "deny"
+unsafe_code = "warn"
+ambiguous_negative_literals = "warn"
+non_ascii_idents = "warn"
+missing_debug_implementations = "warn"
+unnameable_types = "warn"
+unreachable_pub = "warn"
+redundant_lifetimes = "warn"
+unused_lifetimes = "warn"
+unused_qualifications = "warn"
+unused_macro_rules = "warn"
+meta_variable_misuse = "warn"
+let_underscore_drop = "warn"
+unit_bindings = "warn"
+
+[workspace.lints.rustdoc]
+broken_intra_doc_links = "deny"
+
+[workspace.lints.clippy]
+pedantic = { level = "warn", priority = -1 }
+nursery = { level = "warn", priority = -1 }
+wildcard_dependencies = "warn"
+alloc_instead_of_core = "deny"
+as_conversions = "deny"
+default_numeric_fallback = "deny"
+dbg_macro = "deny"
+todo = "deny"
+unimplemented = "deny"
+undocumented_unsafe_blocks = "deny"
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+indexing_slicing = "deny"
+string_slice = "deny"
+unreachable = "deny"
+float_arithmetic = "deny"
+std_instead_of_core = "deny"
+std_instead_of_alloc = "deny"
+host_endian_bytes = "deny"
+mixed_read_write_in_expression = "deny"
+multiple_unsafe_ops_per_block = "deny"
+panic_in_result_fn = "warn"
+await_holding_lock = "deny"
+exit = "deny"
+large_include_file = "warn"
+tests_outside_test_module = "warn"
+let_underscore_must_use = "warn"
+unused_result_ok = "warn"
+allow_attributes_without_reason = "warn"
+unnecessary_safety_comment = "warn"
+unnecessary_safety_doc = "warn"
+clone_on_ref_ptr = "warn"
+fn_to_numeric_cast_any = "warn"
+as_pointer_underscore = "warn"
+unseparated_literal_suffix = "warn"
+empty_drop = "warn"

@@ -1,0 +1,16 @@
+[package]
+name = "rate-flash"
+version = "0.1.0"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+
+[dependencies]
+slimblade-image = { path = "../slimblade-image" }
+slimblade-linux = { path = "../slimblade-linux" }
+slimblade-protocol = { path = "../slimblade-protocol" }
+
+[[bin]]
+name = "rate-flash"
+path = "src/main.rs"

@@ -1,0 +1,17 @@
+[package]
+name = "slimblade-verify"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[features]
+default = ["std"]
+std = ["dep:slimblade-image", "dep:slimblade-protocol"]
+
+[dependencies]
+slimblade-image = { path = "../slimblade-image", optional = true }
+slimblade-protocol = { path = "../slimblade-protocol", optional = true }
+
+[lints]
+workspace = true
