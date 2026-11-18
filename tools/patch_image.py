@@ -20,6 +20,7 @@ Both Beken image CRCs are regenerated after every edit.
 
 import argparse
 import hashlib
+from pathlib import Path
 import struct
 import sys
 
@@ -56,18 +57,13 @@ def crc32_beken(data):
 
 
 def bl_bytes(site, target):
-    """Encode a Thumb-2 BL from `site` to `target`."""
+    """Encode an ARMv5TE Thumb-1 BL from `site` to `target` (±4 MiB range)."""
     off = target - (site + 4)
-    if not -(1 << 24) <= off < (1 << 24) or off & 1:
-        raise ValueError(f"bl offset out of range: {off:#x}")
-    s = (off >> 24) & 1
-    i1, i2 = (off >> 23) & 1, (off >> 22) & 1
-    j1, j2 = (~(i1 ^ s)) & 1, (~(i2 ^ s)) & 1
-    return struct.pack(
-        "<HH",
-        0xF000 | (s << 10) | ((off >> 12) & 0x3FF),
-        0xD000 | (j1 << 13) | (j2 << 11) | ((off >> 1) & 0x7FF),
-    )
+    if not -(1 << 22) <= off < (1 << 22) or off & 1:
+        raise ValueError(f"Thumb-1 BL offset out of ±4 MiB range: {off:#x}")
+    hi = 0xF000 | ((off >> 12) & 0x7FF)
+    lo = 0xF800 | ((off >> 1) & 0x7FF)
+    return struct.pack("<HH", hi, lo)
 
 
 def parse_map(spec):
@@ -131,7 +127,7 @@ def main(argv=None):
     ap.add_argument("--force", action="store_true", help="skip the stock sha256 check")
     args = ap.parse_args(argv)
 
-    blob = open(args.src, "rb").read()
+    blob = Path(args.src).read_bytes()
     if len(blob) != IMAGE_SIZE:
         sys.exit(f"{args.src}: expected {IMAGE_SIZE} bytes, got {len(blob)}")
     digest = hashlib.sha256(blob).hexdigest()
@@ -139,11 +135,8 @@ def main(argv=None):
 
     # Re-running on an already patched image would move the stitch, not just
     # change a constant, so require a clean base unless explicitly forced.
-    if digest != STOCK_SHA256:
-        if not args.force:
-            sys.exit(f"{args.src}: not the stock container (sha256 {digest})")
-        if img[BUTTON_SITE:BUTTON_SITE + 2] != b"\xe8\xf7":
-            sys.exit(f"{args.src}: button site is not a BL; refusing to re-hook")
+    if digest != STOCK_SHA256 and not args.force:
+        sys.exit(f"{args.src}: not the stock container (sha256 {digest})")
 
     if not args.rate and not args.map:
         sys.exit("nothing to do: pass --rate and/or --map")
@@ -154,6 +147,12 @@ def main(argv=None):
         parts.append(f"{args.rate}hz")
 
     if args.map:
+        if bytes(img[BUTTON_SITE:BUTTON_SITE + 4]) != b"\xa0\x78\x60\x70":
+            sys.exit(
+                f"{args.src}: button site at {BUTTON_SITE:#x} is already modified; refusing to re-hook"
+            )
+        if not all(b == 0 for b in img[HOOK:LUT + 256]):
+            sys.exit(f"{args.src}: hook/LUT space {HOOK:#x}..{LUT + 256:#x} is not empty")
         pairs = parse_map(args.map)
         img[BUTTON_SITE:BUTTON_SITE + 4] = bl_bytes(BUTTON_SITE, HOOK)
         hook = build_hook(LUT)
@@ -167,7 +166,9 @@ def main(argv=None):
     img[STACK_CRC:STACK_CRC + 4] = struct.pack("<I", crc32_beken(img[lo:hi]))
 
     out = args.out or "container-" + "-".join(parts) + ".bin"
-    open(out, "wb").write(img)
+    out_path = Path(out)
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_bytes(img)
     print(out, hashlib.sha256(img).hexdigest())
 
 

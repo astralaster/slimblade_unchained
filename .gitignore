@@ -1,0 +1,6 @@
+/target/
+/firmware/
+*.bin
+*.exe
+*.zip
+__pycache__/

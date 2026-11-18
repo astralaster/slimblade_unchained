@@ -54,6 +54,7 @@ def capture(node, seconds):
     fd = os.open(node, os.O_RDONLY | os.O_NONBLOCK)
     stamps = []
     deltas = []
+    batched_extra = 0
     deadline = time.perf_counter() + seconds
     try:
         while True:
@@ -66,17 +67,20 @@ def capture(node, seconds):
             buf = os.read(fd, 8192)
             now = time.perf_counter()
             count = len(buf) // 7
+            if count > 1:
+                batched_extra += count - 1
             for i in range(count):
-                stamps.append(now)
+                if i == 0:
+                    stamps.append(now)
                 dx = int.from_bytes(buf[i * 7 + 1:i * 7 + 3], "little", signed=True)
                 dy = int.from_bytes(buf[i * 7 + 3:i * 7 + 5], "little", signed=True)
                 deltas.append((dx, dy))
     finally:
         os.close(fd)
-    return stamps, deltas
+    return stamps, deltas, batched_extra
 
 
-def report(stamps, deltas):
+def report(stamps, deltas, batched_extra=0):
     if len(stamps) < 10:
         print("not enough reports — was the ball moving?")
         return 1
@@ -85,7 +89,7 @@ def report(stamps, deltas):
     gaps = [b - a for a, b in zip(stamps, stamps[1:])]
     live = sorted(g for g in gaps if g < 0.050)
 
-    print(f"reports      : {len(stamps)} over {span:.3f} s  ({(len(stamps) - 1) / span:.1f}/s)")
+    print(f"reports      : {len(deltas)} over {span:.3f} s  ({(len(stamps) - 1) / span:.1f} reads/s, batched_extra={batched_extra})")
     if not live:
         print("no continuous motion captured")
         return 1
@@ -135,8 +139,8 @@ def main():
         node = hits[0]
 
     print(f"device       : {node}")
-    stamps, deltas = capture(node, args.seconds)
-    return report(stamps, deltas)
+    stamps, deltas, batched_extra = capture(node, args.seconds)
+    return report(stamps, deltas, batched_extra)
 
 
 if __name__ == "__main__":

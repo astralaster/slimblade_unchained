@@ -60,6 +60,27 @@ python3 tools/measure_rate.py -s 8          # wired mouse interface (047d:80d7)
 Spin the ball continuously. The device only emits when motion or button state
 changes, so idle stretches appear as long gaps rather than a low rate.
 
+## Windows (native HID)
+
+No Rust build or Linux VM is required on Windows (uses Python 3.10+ standard library only; run from an elevated shell if HID write access is restricted):
+
+```powershell
+# 1. download & verify official v4.49 updater, extract stock firmware/container.bin
+python tools/flash_windows.py prepare-v449
+
+# 2. patch wired rate to 1000 Hz
+python tools/patch_image.py --src firmware/container.bin --rate 1000 -o firmware/container-1000hz.bin
+
+# 3. identify connected SlimBlade Pro (ensure side switch is on Wired)
+python tools/flash_windows.py identify
+
+# 4. enter loader and flash/verify 1000 Hz image (or roll back with container.bin + stock sha256)
+python tools/flash_windows.py flash --container firmware/container-1000hz.bin --expected-sha256 811c11e09a17aef52eb1d3fed3b4587ea00de8471bbb2c8d3f6f2e828740bd98 --enter-loader
+
+# 5. measure wired report rate via Win32 Raw Input (spin the ball continuously)
+python tools/measure_rate_windows.py -s 8
+```
+
 
 # sha-256 checksums of files
 
